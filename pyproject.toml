@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Local / GitHub distribution name. Import remains `valguard`.
+# This is not the unrelated PyPI project named `valguard`.
+name = "valguard"
+version = "0.2.0"
+description = "OpenAI-compatible client helpers for the ValGuard integrity layer"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "ValGuard" }]
+keywords = ["llm", "openai", "validation", "guardrails", "valguard"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries",
+]
+dependencies = []
+
+[project.optional-dependencies]
+openai = ["openai>=1.0.0"]
+
+[project.urls]
+Homepage = "https://valguard.ai"
+Documentation = "https://valguard.ai/docs/quickstart"
+Repository = "https://github.com/valguard-ai/sdk-python"
+Source = "https://github.com/valguard-ai/sdk-python"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["valguard*"]
