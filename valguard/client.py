@@ -42,6 +42,11 @@ class ValGuardClient:
     rag_sources: Sequence[RAGSource] = field(default_factory=list)
     internal_secret: str | None = None
     project_id: str | None = None
+    idempotency_key: str | None = None
+    approval_mode: str | None = None
+    traceparent: str | None = None
+    parent_span_id: str | None = None
+    agent_id: str | None = None
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> ValGuardClient:
@@ -158,11 +163,8 @@ class ValGuardClient:
         return TestValidatorsResult(status=status, data=data, validation=validation, error=error)
 
     def openai_client_kwargs(self) -> dict[str, Any]:
-        default_headers: dict[str, str] = {}
-        if self.flow_slug:
-            default_headers["X-VG-Flow"] = self.flow_slug
-        else:
-            default_headers["X-VG-Agent"] = self.agent_slug
+        default_headers = self.build_headers()
+        default_headers.pop("Authorization", None)
         return {
             "api_key": self.api_key,
             "base_url": f"{self.base_url.rstrip('/')}/v1",
@@ -188,6 +190,16 @@ class ValGuardClient:
             headers["X-Request-Id"] = self.request_id
         if self.rag_sources:
             headers["X-VG-Sources"] = json.dumps(list(self.rag_sources))
+        if self.idempotency_key:
+            headers["X-VG-Idempotency-Key"] = self.idempotency_key
+        if self.approval_mode:
+            headers["X-VG-Approval-Mode"] = self.approval_mode
+        if self.traceparent:
+            headers["traceparent"] = self.traceparent
+        if self.parent_span_id:
+            headers["X-VG-Parent-Span-Id"] = self.parent_span_id
+        if self.agent_id:
+            headers["X-VG-Agent-Id"] = self.agent_id
         if extra:
             headers.update(extra)
         return headers
@@ -203,6 +215,26 @@ class ValGuardClient:
 
     def with_rag_sources(self, sources: Sequence[RAGSource]) -> ValGuardClient:
         return replace(self, rag_sources=list(sources))
+
+    def with_idempotency_key(self, key: str) -> ValGuardClient:
+        return replace(self, idempotency_key=key)
+
+    def with_approval_mode(self, mode: str) -> ValGuardClient:
+        return replace(self, approval_mode=mode)
+
+    def with_trace(
+        self,
+        *,
+        traceparent: str | None = None,
+        parent_span_id: str | None = None,
+        agent_id: str | None = None,
+    ) -> ValGuardClient:
+        return replace(
+            self,
+            traceparent=traceparent,
+            parent_span_id=parent_span_id,
+            agent_id=agent_id,
+        )
 
     def parse_response_headers(self, headers: Mapping[str, str]) -> ValidationHeaders:
         return parse_validation_headers(headers)

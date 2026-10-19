@@ -2,6 +2,7 @@
 
 from valguard.client import ChatCompletionResult, TestValidatorsResult, ValGuardClient
 from valguard.errors import ValGuardError, ValGuardErrorInfo, parse_valguard_error
+from valguard.evidence import EVIDENCE_TYP, verify_evidence, verify_proof
 from valguard.headers import ValidationHeaders, parse_validation_headers
 from valguard.webhook import (
     WEBHOOK_SIGNATURE_HEADER,
@@ -10,13 +11,27 @@ from valguard.webhook import (
 )
 
 
-def openai_client_kwargs(api_key: str, base_url: str, agent_slug: str) -> dict:
-    """Backward-compatible helper — prefer ValGuardClient.openai_client_kwargs()."""
-    return ValGuardClient(api_key=api_key, base_url=base_url, agent_slug=agent_slug).openai_client_kwargs()
+def openai_client_kwargs(
+    api_key: str,
+    base_url: str,
+    agent_slug: str,
+    provider_key: str | None = None,
+) -> dict:
+    """Backward-compatible helper — prefer ValGuardClient.openai_client_kwargs().
+
+    Pass provider_key so the OpenAI client sends X-Provider-Key (BYOK).
+    """
+    return ValGuardClient(
+        api_key=api_key,
+        base_url=base_url,
+        agent_slug=agent_slug,
+        provider_key=provider_key,
+    ).openai_client_kwargs()
 
 
 __all__ = [
     "ChatCompletionResult",
+    "EVIDENCE_TYP",
     "TestValidatorsResult",
     "ValGuardClient",
     "ValGuardError",
@@ -28,6 +43,8 @@ __all__ = [
     "parse_valguard_error",
     "parse_validation_headers",
     "sign_webhook_payload",
+    "verify_evidence",
+    "verify_proof",
     "verify_webhook_signature",
 ]
 

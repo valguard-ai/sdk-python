@@ -3,10 +3,10 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# Local / GitHub distribution name. Import remains `valguard`.
-# This is not the unrelated PyPI project named `valguard`.
-name = "valguard"
-version = "0.2.0"
+# Distribution name. `pip install valguard` is an unrelated third-party package.
+# Install this SDK as `valguard-sdk`. The import package remains `valguard`.
+name = "valguard-sdk"
+version = "0.3.1"
 description = "OpenAI-compatible client helpers for the ValGuard integrity layer"
 readme = "README.md"
 requires-python = ">=3.10"
