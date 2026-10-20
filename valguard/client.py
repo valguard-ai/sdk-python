@@ -252,10 +252,12 @@ class ValGuardClient:
         self,
         *,
         model: str,
-        messages: Sequence[Mapping[str, str]],
+        messages: Sequence[Mapping[str, Any]],
         stream: bool = False,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        stream_options: Mapping[str, Any] | None = None,
+        response_format: Mapping[str, Any] | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float = 60.0,
     ) -> ChatCompletionResult:
@@ -268,6 +270,10 @@ class ValGuardClient:
             body["temperature"] = temperature
         if max_tokens is not None:
             body["max_tokens"] = max_tokens
+        if stream_options is not None:
+            body["stream_options"] = dict(stream_options)
+        if response_format is not None:
+            body["response_format"] = dict(response_format)
 
         payload = json.dumps(body).encode("utf-8")
         headers = self.build_headers({"Content-Type": "application/json", **dict(extra_headers or {})})
@@ -310,9 +316,11 @@ class ValGuardClient:
         self,
         *,
         model: str,
-        messages: Sequence[Mapping[str, str]],
+        messages: Sequence[Mapping[str, Any]],
         temperature: float | None = None,
         max_tokens: int | None = None,
+        stream_options: Mapping[str, Any] | None = None,
+        response_format: Mapping[str, Any] | None = None,
         tools: Any | None = None,
         tool_choice: Any | None = None,
         extra_headers: Mapping[str, str] | None = None,
@@ -328,6 +336,10 @@ class ValGuardClient:
             body["temperature"] = temperature
         if max_tokens is not None:
             body["max_tokens"] = max_tokens
+        if stream_options is not None:
+            body["stream_options"] = dict(stream_options)
+        if response_format is not None:
+            body["response_format"] = dict(response_format)
         if tools is not None:
             body["tools"] = tools
         if tool_choice is not None:
