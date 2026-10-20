@@ -43,12 +43,33 @@ vg = ValGuardClient.from_env()
 client = OpenAI(**vg.openai_client_kwargs())
 
 raw = client.with_raw_response.chat.completions.create(
-    model="openai/gpt-4o-mini",
-    messages=[{"role": "user", "content": "Extract invoice JSON"}],
+    model="groq/openai/gpt-oss-20b",
+    messages=[
+        {
+            "role": "user",
+            "content": "Return JSON with name Ada Lovelace and email ada@example.com for a demo contact.",
+        }
+    ],
 )
 
 print(vg.parse_response_headers(dict(raw.http_response.headers)))
 print(raw.parse())
+```
+
+## Streaming (tool-call deltas)
+
+Playbooks (`X-VG-Flow`) do not support `stream: true`. For single-agent chat, use `chat_completions_stream` (parses SSE including `tool_calls` deltas):
+
+```python
+vg = ValGuardClient.from_env().with_agent("default")
+result = vg.chat_completions_stream(
+    model="groq/openai/gpt-oss-20b",
+    messages=[{"role": "user", "content": "Summarize the invoice."}],
+)
+print(result.validation)
+for event in result.stream:
+    if event.get("type") == "chunk" and event.get("delta", {}).get("tool_calls"):
+        print(event["delta"]["tool_calls"])
 ```
 
 ## Stdlib-only HTTP
@@ -64,8 +85,13 @@ vg = ValGuardClient(
 )
 
 result = vg.chat_completions(
-    model="openai/gpt-4o-mini",
-    messages=[{"role": "user", "content": "hi"}],
+    model="groq/openai/gpt-oss-20b",
+    messages=[
+        {
+            "role": "user",
+            "content": '{"email": "ada@example.com", "name": "Ada"}',
+        }
+    ],
 )
 print(result.validation)
 print(result.data)
@@ -85,9 +111,10 @@ vg = ValGuardClient.from_env().with_rag_sources(
 from valguard import ValGuardClient, ValGuardError
 
 try:
-    vg.chat_completions(model="openai/gpt-4o-mini", messages=[])
+    vg.chat_completions(model="groq/openai/gpt-oss-20b", messages=[])
 except ValGuardError as err:
-    print(err.info.type)  # validation_block, input_validation, rate_limit_exceeded, ...
+    print(err.info.type)  # validation_block, invalid_request_error, ...
+    print(err.info.code)  # rate_limited, invalid_api_key, orchestration_stream_unsupported, ...
 ```
 
 Soft-fail agents return HTTP 200 with `valid: false` — inspect `result.error.soft_fail` instead of exceptions.
@@ -102,5 +129,6 @@ Soft-fail agents return HTTP 200 with `valid: false` — inspect `result.error.s
 | `verify_proof()` / `verify_evidence()` | Offline HMAC check of a Proof download (`valguard-evidence/1`) |
 | `parse_valguard_error()` | Parse error / soft-fail JSON |
 | `ValGuardError` | Raised on non-2xx responses |
+| `chat_completions_stream()` / `parse_chat_completion_stream()` | SSE streaming with tool-call delta parsing |
 
 `with_approval_mode("async")` sends `X-VG-Approval-Mode`. `with_idempotency_key` sends `X-VG-Idempotency-Key`. `with_trace` sends `traceparent`, `X-VG-Parent-Span-Id`, and `X-VG-Agent-Id`. Response repair is reported with `X-VG-Healed`, `X-VG-Healed-Rules`, `X-VG-Healed-Event-Count`, and `X-VG-Healed-Trace`. Presets are agent settings.

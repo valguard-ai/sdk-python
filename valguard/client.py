@@ -7,10 +7,11 @@ import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field, replace
-from typing import Any, Dict, Mapping, Sequence, Union
+from typing import Any, Dict, Iterator, Mapping, Sequence, Union
 
 from .errors import ValGuardError, ValGuardErrorInfo, parse_valguard_error
 from .headers import ValidationHeaders, parse_validation_headers
+from .stream import iter_chat_completion_stream
 
 RAGSource = Union[str, Dict[str, str]]
 
@@ -29,6 +30,14 @@ class TestValidatorsResult:
     data: Any
     validation: ValidationHeaders
     error: ValGuardErrorInfo | None
+
+
+@dataclass
+class ChatCompletionStreamResult:
+    status: int
+    validation: ValidationHeaders
+    stream: Iterator[dict[str, Any]]
+    error: ValGuardErrorInfo | None = None
 
 
 @dataclass
@@ -296,3 +305,93 @@ class ValGuardClient:
             raise ValGuardError(status, error)
 
         return ChatCompletionResult(status=status, data=data, validation=validation, error=error)
+
+    def chat_completions_stream(
+        self,
+        *,
+        model: str,
+        messages: Sequence[Mapping[str, str]],
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        tools: Any | None = None,
+        tool_choice: Any | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float = 300.0,
+    ) -> ChatCompletionStreamResult:
+        """POST /v1/chat/completions with stream=true and yield parsed SSE events."""
+        body: dict[str, Any] = {
+            "model": model,
+            "messages": list(messages),
+            "stream": True,
+        }
+        if temperature is not None:
+            body["temperature"] = temperature
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
+        if tools is not None:
+            body["tools"] = tools
+        if tool_choice is not None:
+            body["tool_choice"] = tool_choice
+
+        payload = json.dumps(body).encode("utf-8")
+        headers = self.build_headers(
+            {
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream",
+                **dict(extra_headers or {}),
+            }
+        )
+
+        request = urllib.request.Request(
+            self.chat_completions_url,
+            data=payload,
+            headers=headers,
+            method="POST",
+        )
+
+        try:
+            response = urllib.request.urlopen(request, timeout=timeout)
+            status = response.status
+            response_headers = {k: v for k, v in response.headers.items()}
+        except urllib.error.HTTPError as exc:
+            status = exc.code
+            raw = exc.read().decode("utf-8")
+            response_headers = {k: v for k, v in exc.headers.items()}
+            data: Any
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = raw
+            else:
+                data = None
+            validation = parse_validation_headers(response_headers)
+            error = parse_valguard_error(status, data)
+            if error and not error.soft_fail and status >= 400:
+                raise ValGuardError(status, error)
+
+            def empty() -> Iterator[dict[str, Any]]:
+                return iter(())
+
+            return ChatCompletionStreamResult(
+                status=status,
+                validation=validation,
+                stream=empty(),
+                error=error,
+            )
+
+        validation = parse_validation_headers(response_headers)
+
+        def chunk_text() -> Iterator[str]:
+            while True:
+                chunk = response.read(8192)
+                if not chunk:
+                    break
+                yield chunk.decode("utf-8", errors="replace")
+
+        return ChatCompletionStreamResult(
+            status=status,
+            validation=validation,
+            stream=iter_chat_completion_stream(chunk_text()),
+            error=None,
+        )

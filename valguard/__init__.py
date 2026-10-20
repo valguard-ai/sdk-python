@@ -1,6 +1,12 @@
 """ValGuard integration helpers for the OpenAI-compatible layer."""
 
-from valguard.client import ChatCompletionResult, TestValidatorsResult, ValGuardClient
+from valguard.client import (
+    ChatCompletionResult,
+    ChatCompletionStreamResult,
+    TestValidatorsResult,
+    ValGuardClient,
+)
+from valguard.stream import iter_chat_completion_stream, parse_chat_completion_stream
 from valguard.errors import ValGuardError, ValGuardErrorInfo, parse_valguard_error
 from valguard.evidence import EVIDENCE_TYP, verify_evidence, verify_proof
 from valguard.headers import ValidationHeaders, parse_validation_headers
@@ -31,7 +37,10 @@ def openai_client_kwargs(
 
 __all__ = [
     "ChatCompletionResult",
+    "ChatCompletionStreamResult",
     "EVIDENCE_TYP",
+    "iter_chat_completion_stream",
+    "parse_chat_completion_stream",
     "TestValidatorsResult",
     "ValGuardClient",
     "ValGuardError",
