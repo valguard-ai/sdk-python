@@ -22,7 +22,7 @@ pip install openai   # optional, for OpenAI SDK bridge
 export VG_PROXY="https://api.valguard.ai"   # your layer base URL
 export VG_API_KEY="vg_live_..."
 export VG_AGENT="invoice_extraction_agent"
-export VG_PROVIDER_KEY="sk-..."             # optional BYOK upstream key
+export VG_PROVIDER_KEY="gsk_..."              # optional BYOK upstream key (Groq-style)
 ```
 
 ## with_agent and with_playbook
@@ -64,7 +64,12 @@ Playbooks (`X-VG-Flow`) do not support `stream: true`. For single-agent chat, us
 vg = ValGuardClient.from_env().with_agent("default")
 result = vg.chat_completions_stream(
     model="groq/openai/gpt-oss-20b",
-    messages=[{"role": "user", "content": "Summarize the invoice."}],
+    messages=[
+        {
+            "role": "user",
+            "content": "Return JSON with name Ada Lovelace and email ada@example.com for a demo contact.",
+        }
+    ],
 )
 print(result.validation)
 for event in result.stream:
@@ -81,7 +86,7 @@ vg = ValGuardClient(
     api_key="vg_live_...",
     base_url="https://api.valguard.ai",
     agent_slug="default",
-    provider_key="sk-...",
+    provider_key="gsk_...",
 )
 
 result = vg.chat_completions(
@@ -89,7 +94,7 @@ result = vg.chat_completions(
     messages=[
         {
             "role": "user",
-            "content": '{"email": "ada@example.com", "name": "Ada"}',
+            "content": "Return JSON with name Ada Lovelace and email ada@example.com for a demo contact.",
         }
     ],
 )

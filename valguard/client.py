@@ -258,6 +258,8 @@ class ValGuardClient:
         max_tokens: int | None = None,
         stream_options: Mapping[str, Any] | None = None,
         response_format: Mapping[str, Any] | None = None,
+        tools: Any | None = None,
+        tool_choice: Any | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float = 60.0,
     ) -> ChatCompletionResult:
@@ -274,6 +276,10 @@ class ValGuardClient:
             body["stream_options"] = dict(stream_options)
         if response_format is not None:
             body["response_format"] = dict(response_format)
+        if tools is not None:
+            body["tools"] = tools
+        if tool_choice is not None:
+            body["tool_choice"] = tool_choice
 
         payload = json.dumps(body).encode("utf-8")
         headers = self.build_headers({"Content-Type": "application/json", **dict(extra_headers or {})})
