@@ -73,8 +73,9 @@ result = vg.chat_completions_stream(
 )
 print(result.validation)
 for event in result.stream:
-    if event.get("type") == "chunk" and event.get("delta", {}).get("tool_calls"):
-        print(event["delta"]["tool_calls"])
+    delta = event.get("delta") or {}
+    if event.get("type") == "chunk" and delta.get("content"):
+        print(delta["content"], end="", flush=True)
 ```
 
 ## Stdlib-only HTTP
