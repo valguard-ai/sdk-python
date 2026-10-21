@@ -21,7 +21,7 @@ pip install openai   # optional, for OpenAI SDK bridge
 ```bash
 export VG_PROXY="https://api.valguard.ai"   # your layer base URL
 export VG_API_KEY="vg_live_..."
-export VG_AGENT="invoice_extraction_agent"
+export VG_AGENT="default"                     # must be an agent slug that exists in your org
 export VG_PROVIDER_KEY="gsk_..."              # optional BYOK upstream key (Groq-style)
 ```
 
@@ -56,9 +56,9 @@ print(vg.parse_response_headers(dict(raw.http_response.headers)))
 print(raw.parse())
 ```
 
-## Streaming (tool-call deltas)
+## Streaming chat completions
 
-Playbooks (`X-VG-Flow`) do not support `stream: true`. For single-agent chat, use `chat_completions_stream` (parses SSE including `tool_calls` deltas):
+Playbooks (`X-VG-Flow`) do not support `stream: true`. For single-agent chat, use `chat_completions_stream` — it parses SSE and surfaces `delta.content` (and `tool_calls` deltas when you pass `tools`):
 
 ```python
 vg = ValGuardClient.from_env().with_agent("default")
@@ -80,6 +80,8 @@ for event in result.stream:
 
 ## Stdlib-only HTTP
 
+`chat_completions()` accepts optional `tools` and `tool_choice` (same body fields as the proxy chat API, matching `chat_completions_stream()`).
+
 ```python
 from valguard import ValGuardClient
 
@@ -98,6 +100,8 @@ result = vg.chat_completions(
             "content": "Return JSON with name Ada Lovelace and email ada@example.com for a demo contact.",
         }
     ],
+    # tools=[{"type": "function", "function": {"name": "lookup", "parameters": {"type": "object"}}}],
+    # tool_choice="auto",
 )
 print(result.validation)
 print(result.data)

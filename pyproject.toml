@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Distribution name. `pip install valguard` is an unrelated third-party package.
 # Install this SDK as `valguard-sdk`. The import package remains `valguard`.
 name = "valguard-sdk"
-version = "0.3.7"
+version = "0.3.8"
 description = "OpenAI-compatible client helpers for the ValGuard integrity layer"
 readme = "README.md"
 requires-python = ">=3.10"
